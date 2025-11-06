@@ -6,12 +6,12 @@ on:
       MANIFEST_BRANCH:
         description: 'TWRP Manifest Branch'
         required: true
-        default: 'twrp-12.1'
+        default: 'twrp-14.1'
         type: choice
         options:
+          - twrp-14.1
           - twrp-12.1
           - twrp-13.0
-          - twrp-14.1
 
 jobs:
   build:
@@ -23,8 +23,11 @@ jobs:
         
       - name: Free up space
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/.ghcup /usr/local/share/boost /usr/local/graalvm
           sudo docker image prune --all --force
+          sudo apt-get purge -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
+          sudo apt-get autoremove -y
           sudo apt-get clean
           df -h
           
@@ -57,7 +60,7 @@ jobs:
       - name: Clone device tree
         run: |
           cd twrp
-          git clone https://github.com/xiaomi-sm8750-onyx/device_xiaomi_onyx-twrp.git -b miodm_onyx-user-15-AQ3A.250107.001-OS2.0.102.0.VOLMIXM-release-keys device/xiaomi/onyx --depth=1
+          git clone https://github.com/Little-Onyx-ID/device_xiaomi_onyx-twrp.git -b 14.1 device/xiaomi/onyx --depth=1
           
       - name: Check disk space
         run: |
@@ -93,13 +96,5 @@ jobs:
           export LC_ALL=C
           df -h
           source build/envsetup.sh
-          lunch omni_onyx-eng
+          lunch twrp_onyx-eng
           mka recoveryimage -j$(nproc --all)
-          df -h
-          
-      - name: Upload recovery
-        uses: actions/upload-artifact@v4
-        with:
-          name: TWRP-onyx-decrypt
-          path: twrp/out/target/product/onyx/recovery.img
-          retention-days: 30
